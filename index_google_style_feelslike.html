@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clima San Miguel</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      text-align: center;
+    }
+    .container {
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 0.2em;
+    }
+    .time {
+      font-size: 1em;
+      margin-bottom: 1em;
+      color: #cccccc;
+    }
+    .current-weather {
+      font-size: 1.8em;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .forecast {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .day {
+      background-color: #1f1f1f;
+      border-radius: 10px;
+      padding: 10px;
+      min-width: 100px;
+      color: #eee;
+    }
+    .day strong {
+      color: #fff;
+      display: block;
+      margin-bottom: 5px;
+    }
+    .emoji {
+      font-size: 1.5em;
+    }
+    .temps {
+      margin: 5px 0;
+    }
+    .description {
+      font-size: 0.9em;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Clima en San Miguel</h1>
+    <div class="time" id="time">Cargando hora...</div>
+    <div class="current-weather" id="current">Cargando clima...</div>
+    <div class="forecast" id="forecast"></div>
+  </div>
+
+  <script>
+    const API_KEY = '6825259b519d7b3c034199155747359c';
+
+    function updateTime() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      document.getElementById('time').textContent = "Hora actual: " + timeString;
+    }
+
+    function getEmoji(description) {
+      description = description.toLowerCase();
+      if (description.includes("lluvia")) return "🌧️";
+      if (description.includes("nieve")) return "❄️";
+      if (description.includes("tormenta")) return "⛈️";
+      if (description.includes("nubes")) return "⛅";
+      if (description.includes("nublado")) return "☁️";
+      if (description.includes("despejado") || description.includes("claro")) return "☀️";
+      return "🌡️";
+    }
+
+    async function getWeather() {
+      const lat = -34.5433;
+      const lon = -58.7111;
+
+      try {
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&units=metric&lang=es&appid=${API_KEY}`);
+        const data = await res.json();
+
+        const current = data.current;
+        const daily = data.daily.slice(0, 7);
+
+        const emoji = getEmoji(current.weather[0].description);
+        document.getElementById('current').innerHTML = `${emoji} ${Math.round(current.temp)}°C - ${current.weather[0].description}<br><span style="font-size: 0.9em; color: #aaa;">Sensación térmica: ${Math.round(current.feels_like)}°C</span><br>
+          ${emoji} ${Math.round(current.temp)}°C - ${current.weather[0].description}
+        `;
+
+        const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        document.getElementById('forecast').innerHTML = daily.map((day, i) => {
+          const d = new Date(day.dt * 1000);
+          const desc = day.weather[0].description;
+          return `
+            <div class="day">
+              <strong>${i === 0 ? 'Hoy' : days[d.getDay()]}</strong>
+              <div class="emoji">${getEmoji(desc)}</div>
+              <div class="temps">${Math.round(day.temp.max)}° / ${Math.round(day.temp.min)}°</div>
+              <div class="description">${desc}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        document.getElementById('current').textContent = "Error al cargar clima.";
+        console.error("Error:", err);
+      }
+    }
+
+    updateTime();
+    setInterval(updateTime, 1000);
+    getWeather();
+    setInterval(getWeather, 600000);
+  </script>
+</body>
+</html>
